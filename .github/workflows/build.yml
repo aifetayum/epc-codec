@@ -1,0 +1,26 @@
+name: build                      # name shown in the GitHub UI
+
+on:                              # when to run (ADO: trigger)
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest       # fresh Linux VM (ADO: pool vmImage)
+    steps:
+      - uses: actions/checkout@v4          # pull your repo onto the VM
+
+      - name: Install ARM toolchain
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi
+
+      - name: Unit tests (host)
+        run: make test CC_HOST=gcc         # Linux uses gcc instead of Mac clang
+
+      - name: Firmware build + size gate
+        run: make size-check
+
+      - name: Save firmware
+        uses: actions/upload-artifact@v4   # ADO: Publish Pipeline Artifact
+        with:
+          name: firmware
+          path: build/epc_arm.o
